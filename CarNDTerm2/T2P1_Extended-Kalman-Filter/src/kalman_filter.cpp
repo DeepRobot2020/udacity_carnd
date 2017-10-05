@@ -68,17 +68,17 @@ void KalmanFilter::Predict(float dt) {
     return;    
   }
   
-	float dt_2 = dt * dt;
-	float dt_3 = dt_2 * dt;
-	float dt_4 = dt_3 * dt;
-	//Modify the F matrix so that the time is integrated
-	F_(0, 2) = dt;
+  float dt_2 = dt * dt;
+  float dt_3 = dt_2 * dt;
+  float dt_4 = dt_3 * dt;
+  //Modify the F matrix so that the time is integrated
+  F_(0, 2) = dt;
   F_(1, 3) = dt;
 
-	Q_ <<  dt_4/4*noise_ax, 0, dt_3/2*noise_ax, 0,
-			   0, dt_4/4*noise_ay, 0, dt_3/2*noise_ay,
-			   dt_3/2*noise_ax, 0, dt_2*noise_ax, 0,
-         0, dt_3/2*noise_ay, 0, dt_2*noise_ay; 
+  Q_ <<  dt_4/4*noise_ax, 0, dt_3/2*noise_ax, 0,
+          0, dt_4/4*noise_ay, 0, dt_3/2*noise_ay,
+          dt_3/2*noise_ax, 0, dt_2*noise_ax, 0,
+          0, dt_3/2*noise_ay, 0, dt_2*noise_ay; 
 
   x_ = F_*x_ /* + *u_*/; // u_ is zero meaned variable
   P_ = F_*P_*F_.transpose() + Q_;
