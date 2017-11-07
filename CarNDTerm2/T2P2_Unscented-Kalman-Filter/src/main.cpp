@@ -69,7 +69,6 @@ int main()
 
           if (sensor_type.compare("L") == 0)
           {
-            std::cout << "LIDAR measurement" << std::endl;
             meas_package.sensor_type_ = MeasurementPackage::LASER;
             meas_package.raw_measurements_ = VectorXd(2);
             float px;
@@ -82,7 +81,6 @@ int main()
           }
           else if (sensor_type.compare("R") == 0)
           {
-            std::cout << "RADAR measurement" << std::endl;
             meas_package.sensor_type_ = MeasurementPackage::RADAR;
             meas_package.raw_measurements_ = VectorXd(3);
             float ro;
