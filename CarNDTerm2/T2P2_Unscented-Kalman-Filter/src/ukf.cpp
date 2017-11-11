@@ -24,7 +24,10 @@ static double normalize_angle(double angle)
 /**
  * Initializes Unscented Kalman filter
  */
-UKF::UKF(double std_a=1.0, double std_yawdd=1.0) : std_a_(std_a), std_yawdd_(std_yawdd)
+UKF::UKF(double std_a, double std_yawdd, MatrixXd P) : 
+  std_a_(std_a), 
+  std_yawdd_(std_yawdd),
+  P_(P)
 {
   // We need initialize the UKF on receiving the first measurement
   is_initialized_ = false;
@@ -38,16 +41,14 @@ UKF::UKF(double std_a=1.0, double std_yawdd=1.0) : std_a_(std_a), std_yawdd_(std
   // initial state vector
   x_ = VectorXd(5);
 
-  // initial covariance matrix
-  P_ = MatrixXd::Identity(5, 5);
-
   // Laser measurement noise covariance
   R1_ = MatrixXd(n_l_, n_l_);
   R1_ << std_laspx_ * std_laspx_, 0,
-      0, std_laspy_ * std_laspy_;
+         0, std_laspy_ * std_laspy_;
 
   // Rader measurement noise covariance
   R2_ = MatrixXd(n_z_, n_z_);
+    
   R2_ << std_radr_ * std_radr_, 0, 0,
       0, std_radphi_ * std_radphi_, 0,
       0, 0, std_radrd_ * std_radrd_;
@@ -63,7 +64,6 @@ UKF::UKF(double std_a=1.0, double std_yawdd=1.0) : std_a_(std_a), std_yawdd_(std
   
   // Predicted sigma points matrix
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
-  Xsig_pred_.fill(0);
 
   // Weights of sigma points
   weights_ = VectorXd(2 * n_aug_ + 1);
@@ -79,17 +79,23 @@ UKF::UKF(double std_a=1.0, double std_yawdd=1.0) : std_a_(std_a), std_yawdd_(std
 
   // create agument sigma point matrix
   Xsig_aug_ = MatrixXd(n_aug_, 2 * n_aug_ + 1);
-  Xsig_aug_.fill(0.0);
 
   // create agument sigma point covariance matrix
   P_aug_ = MatrixXd(n_aug_, n_aug_);
+
+  // We need initialize the UKF on receiving the first measurement
+  is_initialized_ = false;
+
+
+  x_.fill(0);
+  Xsig_pred_.fill(0.0);  
+  Xsig_aug_.fill(0.0);
   P_aug_.fill(0.0);
 
   // lidar NIS
   lidar_nis_ = 0.0;
   radar_nis_ = 0.0;  
 }
-
 
 UKF::~UKF() {}
 
@@ -129,7 +135,7 @@ double UKF::ProcessMeasurement(const MeasurementPackage &meas_package)
    *  Initialization
    ****************************************************************************/
   if (!is_initialized_)
-  {
+  {    
     // first measurement
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_)
     {
@@ -137,14 +143,11 @@ double UKF::ProcessMeasurement(const MeasurementPackage &meas_package)
        */
       double rho = meas_package.raw_measurements_(0);
       double phi = meas_package.raw_measurements_(1);
-
+      /**
+      Initialize state.
+      */
       x_(0) = rho * cos(phi);
       x_(1) = rho * sin(phi);      
-      // P_(0,0) = 2;      
-      // P_(1,1) = 2;
-      // P_(2,2) = 2;
-      // P_(3,3) = 2;
-      // P_(4,4) = 2;
     }
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_)
     {
@@ -154,9 +157,6 @@ double UKF::ProcessMeasurement(const MeasurementPackage &meas_package)
       x_(0) = meas_package.raw_measurements_(0);
       x_(1) = meas_package.raw_measurements_(1);
     }
-
-    // Initialize the speed to something meaningful for a bicycle
-    // x_(2) = 0.5;
 
     time_us_ = meas_package.timestamp_;
     is_initialized_ = true;
@@ -229,7 +229,6 @@ void UKF::CalculateAugmentSigmaPoints()
   //create augmented sigma points
   float sigma_scale = sqrt(lambda_ + n_aug_);
   Xsig_aug_.col(0) = x_aug;
-
   for (int i = 0; i < n_aug_; i++)
   {
     Xsig_aug_.col(i + 1) = x_aug + sigma_scale * L.col(i);
@@ -336,6 +335,7 @@ double UKF::UpdateLidar(const MeasurementPackage &meas_package)
     * position. Update state vector, x_, and covariance, P_ and  lidar NIS.
   */
   MatrixXd Zsig = MatrixXd(n_l_, 2 * n_aug_ + 1);
+  Zsig.fill(0.0);
 
   for (int i = 0; i < 2 * n_aug_ + 1; i++)
   { //2n+1 simga points
@@ -373,6 +373,11 @@ double UKF::UpdateLidar(const MeasurementPackage &meas_package)
   MatrixXd Tc = MatrixXd(n_x_, n_l_);
   VectorXd z = meas_package.raw_measurements_;
 
+  if(fabs(z(0)) < 0.001)
+    z(0) = 0.001;
+  if(fabs(z(1)) < 0.001)
+    z(1) = 0.001;
+    
   //calculate cross correlation matrix
   Tc.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++)
@@ -430,7 +435,7 @@ double UKF::UpdateRadar(const MeasurementPackage &meas_package)
     if (fabs(p_x) < 0.001)
       p_x = 0.001;
     if (fabs(p_y) < 0.001)
-      p_x = 0.001;
+      p_y = 0.001;
 
     // measurement model
     double rho = sqrt(p_x * p_x + p_y * p_y); //r

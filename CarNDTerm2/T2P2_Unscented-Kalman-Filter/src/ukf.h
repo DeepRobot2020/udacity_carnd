@@ -99,7 +99,7 @@ public:
     /**
    * Constructor
    */
-  UKF(double std_a, double std_yawdd);
+  UKF(double std_a, double std_yawdd, MatrixXd P);
   
   /**
    * Destructor
