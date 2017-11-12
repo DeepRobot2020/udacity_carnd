@@ -15,16 +15,19 @@ using namespace std;
 // for convenience
 using json = nlohmann::json;
 
-static ofstream s_ukf_logger("ukf.log");
+static ofstream s_nis_logger("nis.log");
+static ofstream s_visualize_logger("visualize.log");
 static ofstream s_dataset("dataset1.txt");
+
+
 // whether log all the measurement to a text file. Used for grid search 
 static bool log_measurement_enabled = false;
 // whether log useful UKF output like senor NIS, estimation and ground truth of (px, py, vx, vy)  
-static bool log_ukf_enabled = false;
+static bool log_enabled = true;
 // Whether to perform gird serach to find the optimal std_a, std_yawdd and initial P
 static bool grid_search_enabled = false;
 // Whether to run with simulator 
-static bool run_with_simulator = false;
+static bool run_with_simulator = true;
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -55,7 +58,7 @@ static void usage(char *program_name)
       stderr,
       "\n"
       "  Usage: %s [OPTIONS]\n"
-      "    -l arg  Log UKF processing results (senor NIS, estimation and ground truth)\n"
+      "    -l arg  Log Sensor NIS, estimatin and ground truth\n"
       "    -m arg  Log measurements from a dataset:\n"
       "    -g arg  Run grid search to find optimal std_a and std_yawdd\n"
       "    -s arg  Run with simulator\n"
@@ -74,15 +77,18 @@ void process_args(int argc, char *argv[])
     {
     case 'l':
       // Set input stream path
-      log_ukf_enabled = atoi(optarg) ? true : false;
+      log_enabled = atoi(optarg) ? true : false;
       break;
     case 'm':
+      // Log the measurement from the simulator
       log_measurement_enabled = atoi(optarg) ? true : false;
       break;
     case 'g':
+      // Perform grid search 
       grid_search_enabled = atoi(optarg) ? true : false;
       break;
     case 's':
+      // Run with the simulator 
       run_with_simulator = atoi(optarg) ? true : false;
       break;
     case 'h':
@@ -162,16 +168,18 @@ static VectorXd process_measurement(UKF &ukf, Tools &tools,
   gt_values(3) = vy_gt;
   ground_truth.push_back(gt_values);
 
+
   //Call ProcessMeasurment(meas_package) for Kalman filter
   double sensor_nis = ukf.ProcessMeasurement(meas_package);
 
   //Push the current estimated x,y positon from the Kalman filter's state vector
   VectorXd estimate(4);
+  VectorXd x = ukf.StateMeanX();
 
-  double p_x = ukf.x_(0);
-  double p_y = ukf.x_(1);
-  double v = ukf.x_(2);
-  double yaw = ukf.x_(3);
+  double p_x = x(0);
+  double p_y = x(1);
+  double v   = x(2);
+  double yaw = x(3);
 
   double v1 = cos(yaw) * v;
   double v2 = sin(yaw) * v;
@@ -191,42 +199,59 @@ static VectorXd process_measurement(UKF &ukf, Tools &tools,
     s_dataset << "\n";
     s_dataset.flush();
   }
-  // Log the UKF output value 
-  if (log_ukf_enabled)
-  {
-    // Log the NIS of the sensor
-    if (ukf.UseLaser() && sensor_type.compare("L") == 0)
-    {
-      s_ukf_logger << "LaserNIS:";
-      s_ukf_logger << sensor_nis;
-    }
-    else if (ukf.UseRadar() && sensor_type.compare("R") == 0)
-    {
-      s_ukf_logger << "RadarNIS:";
-      s_ukf_logger << sensor_nis;
-    }
-    s_ukf_logger << "\n";
-    // Log the estimation and ground truth
-    s_ukf_logger << "Tracking:";
 
-    s_ukf_logger << ukf.P_ << endl;
-    for(int i =0; i < meas_package.raw_measurements_.size(); i++) {
-      s_ukf_logger << meas_package.raw_measurements_(i);
-      s_ukf_logger << " ";
+  if(log_enabled)
+  {
+    //output the estimation
+    s_visualize_logger << p_x << "\t"; //pos1 - est
+    s_visualize_logger << p_y << "\t"; //pos2 - est
+    s_visualize_logger << x(2) << "\t"; //pos2 - est
+    s_visualize_logger << x(3) << "\t"; //pos2 - est
+    s_visualize_logger << x(4) << "\t"; //pos2 - est
+
+    //output the measurements
+    if (sensor_type.compare("L") == 0)
+    {    
+      //output the estimation
+      s_visualize_logger << meas_package.raw_measurements_(0) << "\t"; //p1 - meas
+      s_visualize_logger << meas_package.raw_measurements_(1) << "\t"; //p2 - meas
     }
-    for (int i = 0; i < 4; i++)
+    else if (sensor_type.compare("R") == 0)
     {
-      s_ukf_logger << estimate(i);
-      s_ukf_logger << " ";
+      float ro = meas_package.raw_measurements_(0);
+      float phi = meas_package.raw_measurements_(1);
+      s_visualize_logger << ro * cos(phi) << "\t";    //p1_meas
+      s_visualize_logger << ro * sin(phi) << "\t";    //p2_meas
     }
-    for (int i = 0; i < 4; i++)
+
+    float v_abs_gt = sqrt(vx_gt*vx_gt + vy_gt*vy_gt);
+    float yaw_gt;
+    float yaw_dot_gt;
+    iss >> yaw_gt;
+    iss >> yaw_dot_gt;
+
+    //output the gt packages
+    s_visualize_logger << x_gt << "\t";       //p1 - GT
+    s_visualize_logger << y_gt << "\t";       //p2 - GT
+    s_visualize_logger << v_abs_gt << "\t";       //v_abs - GT
+    s_visualize_logger << yaw_gt << "\t";       //yaw - GT
+    s_visualize_logger << yaw_dot_gt << "\t";       //yaw_dot - GT
+    s_visualize_logger << vx_gt << "\t";      //v1 - GT
+    s_visualize_logger << vy_gt << "\n";      //v2 - GT
+
+    // Log the NIS of the sensor
+    if (ukf.IsLaserUsed() && sensor_type.compare("L") == 0)
     {
-      s_ukf_logger << gt_values(i);
-      s_ukf_logger << " ";
+      s_nis_logger << "LaserNIS:";
+      s_nis_logger << sensor_nis;
     }
-    s_ukf_logger << "\n";
-    s_ukf_logger.flush();
-  } //  if (log_ukf)
+    else if (ukf.IsRadarUsed() && sensor_type.compare("R") == 0)
+    {
+      s_nis_logger << "RadarNIS:";
+      s_nis_logger << sensor_nis;
+    }
+    s_nis_logger << "\n";
+  } //  if(log_enabled)
 
   return RMSE;
 }
@@ -260,7 +285,7 @@ float float_precision(const double x, const int decDigits) {
     return stof(ss.str());
   }
   
-static std::tuple<bool, double, double, MatrixXd> grid_search_stda_stdyaw(double std_a_min, double std_a_max,
+static std::tuple<bool, double, double> grid_search_stda_stdyaw(double std_a_min, double std_a_max,
                                                                           double std_yawdd_min, double std_yawdd_max)
 {
   double delta = 0.01;
@@ -268,85 +293,55 @@ static std::tuple<bool, double, double, MatrixXd> grid_search_stda_stdyaw(double
 
   bool best_std_a = 0.0;
   bool best_std_yawdd = 0.0;
-  MatrixXd best_P = MatrixXd::Identity(5, 5);
 
-  double min_search_error1 = 1000.0;
-  double min_search_error2 = 1000.0;
+
+  double min_search_error = 1000.0;
 
   for (double std_a = std_a_min; std_a <= std_a_max; std_a += delta)
   {
     cout << "std_a: "<< std_a << endl;
     for (double std_yawdd = std_yawdd_min; std_yawdd <= std_yawdd_max; std_yawdd += 0.1)
     {
-
-      MatrixXd P = MatrixXd::Identity(5, 5);
-      std::random_device rd;
-      std::mt19937 gen(rd());
-      for (int i = 0; i < 5; i++)
-      {
-        std::normal_distribution<float> d(0, 1);
-        float sample = d(gen);
-        sample = float_precision(sample, 3);
-        P(i, i) = fabs(sample);
-      }
-
-      UKF ukf1(std_a, std_yawdd, P);
-      UKF ukf2(std_a, std_yawdd, P);
+      UKF ukf1(std_a, std_yawdd);
+      UKF ukf2(std_a, std_yawdd);
 
       VectorXd RMSE1 = run_ukf_dataset("../data/dataset1.txt", ukf1);
       VectorXd RMSE2 = run_ukf_dataset("../data/dataset2.txt", ukf2);
 
       bool good_for_dataset1 =
-          (RMSE1(0) <= 0.09) &&
-          (RMSE1(1) <= 0.1) &&
-          (RMSE1(2) <= 0.4) &&
-          (RMSE1(3) <= 0.3);
+          (RMSE1(0) < 0.09) &&
+          (RMSE1(1) < 0.1) &&
+          (RMSE1(2) < 0.4) &&
+          (RMSE1(3) < 0.3);
 
       bool good_for_dataset2 =
-          (RMSE2(0) <= 0.09) &&
-          (RMSE2(1) <= 0.1) &&
-          (RMSE2(2) <= 0.4) &&
-          (RMSE2(3) <= 0.3);
+          (RMSE2(0) < 0.2) &&
+          (RMSE2(1) < 0.2) &&
+          (RMSE2(2) < 0.55) &&
+          (RMSE2(3) < 0.55);
 
       double err1 = RMSE1.transpose() * RMSE1;
       double err2 = RMSE2.transpose() * RMSE2;
+      double err = sqrt(err1*err1 +  err2*err2);
 
-      if (good_for_dataset1)
+      if (err < min_search_error)
       {
-        if(err1 > min_search_error1)
-          continue;
-        min_search_error1 = err1;
-        best_std_a = std_a;
-        best_std_yawdd = std_yawdd;
-        best_P = P;
-
+        if(good_for_dataset1 && good_for_dataset2)
+        {
+          best_std_a = std_a;
+          best_std_yawdd = std_yawdd;
+          found_result = true;
+        }
+        min_search_error = err;
         cout << "######################################################" << endl;
-        cout << "std_a1: " << std_a << endl;
-        cout << "std_yawdd1: " << std_yawdd << endl;
-        cout << "P: " << P << endl;
+        cout << "std_a: " << std_a << endl;
+        cout << "std_yawdd: " << std_yawdd << endl;
 
         cout << "RMSE1: " << RMSE1 << endl;
         cout << "RMSE2: " << RMSE2 << endl;
-        cout << "min_search_error1: " << min_search_error1 << endl;
-        cout << "######################################################" << endl;
-      }
-
-      if (good_for_dataset2)
-      {
-        if(err2 > min_search_error2)
-          continue;
-        min_search_error2 = err2;
-        best_std_a = std_a;
-        best_std_yawdd = std_yawdd;
-        best_P = P;
-
-        cout << "######################################################" << endl;
-        cout << "std_a2: " << std_a << endl;
-        cout << "std_yawdd2: " << std_yawdd << endl;
-        cout << "P: " << P << endl;
-        cout << "RMSE1: " << RMSE1 << endl;
-        cout << "RMSE2: " << RMSE2 << endl;
-        cout << "min_search_error2: " << min_search_error2 << endl;
+        cout << "min_search_error: " << min_search_error << endl;
+        cout << "err1: " << err1 << endl;
+        cout << "err2: " << err2 << endl;
         cout << "######################################################" << endl;
       }
     }
@@ -355,12 +350,14 @@ static std::tuple<bool, double, double, MatrixXd> grid_search_stda_stdyaw(double
   if (!found_result)
   {
     cout << "Search failed: no good std_a and std_yawdd" << endl;
-    return std::make_tuple(false, 1.0, 1.0, MatrixXd::Identity(5, 5));
+    return make_tuple(false, 1.0, 1.0);
   }
   else
   {
     cout << "Search is sucessful" << endl;
-    return std::make_tuple(true, best_std_a, best_std_yawdd, best_P);
+    cout << "std_a: " << best_std_a << endl;
+    cout << "std_yawdd: " << best_std_yawdd << endl;
+    return make_tuple(true, best_std_a, best_std_yawdd);
   }
 }
   /** Note:
@@ -379,29 +376,23 @@ int main(int argc, char *argv[])
   process_args(argc, argv);
   cout << "UKF Mode:" << endl;
   cout << "\tLog Measurement: " << (log_measurement_enabled ? "True" : "False") << endl;
-  cout << "\tLog UKF: " << (log_ukf_enabled ? "True" : "False") << endl;
+  cout << "\tLog UKF for visualization: " << (log_enabled ? "True" : "False") << endl;
   cout << "\tGrid Search: " << (grid_search_enabled ? "True" : "False") << endl;
   cout << "\tRun with Simulator: " << (run_with_simulator ? "True" : "False") << endl;
 
    /*****************************************************************************
    *  Initialization
    ****************************************************************************/ 
-  /** Below is a set of optimal value (std_a, std_yawdd, P) I got from grid search
+  /** Below is a set of optimal value (std_a, std_yawdd) got from grid search
    */
-  double ukf_std_a = 0.5;
-  double ukf_std_yawdd = 0.7;
-  MatrixXd ukf_P = MatrixXd::Identity(5, 5);
-  ukf_P(0,0) = 1.2;
-  ukf_P(1,1) = 1.98;
-  ukf_P(2,2) = 0.9;
-  ukf_P(3,3) = 2.09;
-  ukf_P(4,4) = 0.6;
+  double ukf_std_a = 0.46;
+  double ukf_std_yawdd = 0.55;
 
   if (grid_search_enabled)
   {
-    const double std_a_min = 0.1;
+    const double std_a_min = 0.25;
     const double std_a_max = 3;
-    const double std_yawdd_min = 0.1;
+    const double std_yawdd_min = 0.25;
     const double std_yawdd_max = 3;
 
     cout << "Runing grid search to find optimal std_a and std_yawdd..." << endl;
@@ -423,7 +414,6 @@ int main(int argc, char *argv[])
         cout << "Updating optimal std_a, std_yawdd, P..." << endl;
         ukf_std_a     = std::get<1>(search_result);
         ukf_std_yawdd = std::get<2>(search_result);
-        ukf_P         = std::get<3>(search_result);
       }
       else
       {
@@ -438,13 +428,13 @@ int main(int argc, char *argv[])
   cout << "Running with simulator with: " << endl;
   cout << "\tstd_a: " << ukf_std_a << endl;
   cout << "\tstd_yawdd: " << ukf_std_yawdd << endl;
-  cout << "\tP: " << ukf_P << endl;
-  UKF ukf(ukf_std_a, ukf_std_yawdd, ukf_P);
+
   // used to compute the RMSE later
   uWS::Hub h;
   Tools tools;
   vector<VectorXd> estimations;
   vector<VectorXd> ground_truth;
+  UKF ukf(ukf_std_a, ukf_std_yawdd);
 
   h.onMessage([&ukf, &tools, &estimations, &ground_truth](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -461,8 +451,9 @@ int main(int argc, char *argv[])
         {
           VectorXd RMSE = process_measurement(ukf, tools, estimations, ground_truth, s);
           json msgJson;
-          msgJson["estimate_x"] = ukf.x_(0); //px
-          msgJson["estimate_y"] = ukf.x_(1); //py
+          VectorXd x = ukf.StateMeanX();
+          msgJson["estimate_x"] = x(0); //px
+          msgJson["estimate_y"] = x(1); //py
           msgJson["rmse_x"] = RMSE(0);
           msgJson["rmse_y"] = RMSE(1);
           msgJson["rmse_vx"] = RMSE(2);
