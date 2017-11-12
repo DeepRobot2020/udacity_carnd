@@ -1,7 +1,12 @@
-# Unscented Kalman Filter Project
+# Unscented Kalman Filter Project Starter Code
 Self-Driving Car Engineer Nanodegree Program
 
 In this project utilize an Unscented Kalman Filter to estimate the state of a moving object of interest with noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project rubric. 
+
+This project involves the Term 2 Simulator which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases)
+
+This repository includes two files that can be used to set up and intall [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) for either Linux or Mac systems. For windows you can use either Docker, VMware, or even [Windows 10 Bash on Ubuntu](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) to install uWebSocketIO. Please see [this concept in the classroom](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/16cf4a78-4fc7-49e1-8621-3450ca938b77) for the required version and installation scripts.
+
 Once the install for uWebSocketIO is complete, the main program can be built and ran by doing the following from the project top directory.
 
 1. mkdir build
@@ -9,40 +14,6 @@ Once the install for uWebSocketIO is complete, the main program can be built and
 3. cmake ..
 4. make
 5. ./UnscentedKF
-
----
-### command options
-- To find the optimal std_a and std_yawdd, run './UnscentedKF -g 1'.
-- To run the UnscentedKF with simulaor './UnscentedKF -s 1' (default mode)
-- To log the measurement from simulaor into a text file, run'./UnscentedKF -m 1'
-- To log the output from UKF, run './UnscentedKF -l 1'
-
-
-### UKF results from dataset1
-- RMSE
-![RMSE of dataset1](./results/RMSE1.jpg)
-- Lidar NIS
-![Laser NIS](./results/Laser_nis_dataset1.png)
-- Radar NIS
-![Radar NIS](./results/Radar_nis_dataset1.png)
-- Visualize Estimation
-![Estimatiuon1](./results/vis_dataset1.png)
-
-### UKF results from dataset2
-- RMSE
-![RMSE of dataset2](./results/RMSE2.jpg)
-- Lidar NIS
-![Laser NIS](./results/Laser_nis_dataset2.png)
-- Radar NIS
-![Radar NIS](./results/Radar_nis_dataset2.png)
-- Visualize Estimation
-![Estimation2](./results/vis_dataset2.png)
-
----
-This project involves the Term 2 Simulator which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases)
-
-This repository includes two files that can be used to set up and intall [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) for either Linux or Mac systems. For windows you can use either Docker, VMware, or even [Windows 10 Bash on Ubuntu](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) to install uWebSocketIO. Please see [this concept in the classroom](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/16cf4a78-4fc7-49e1-8621-3450ca938b77) for the required version and installation scripts.
-
 
 Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
 
