@@ -41,9 +41,6 @@ private:
 	//precision of control information:
 	float control_std ;
 
-	//precision of observation 
-	float observation_std;
-
 	//initial belief of state x:
 	std::vector<float> bel_x_init ;
 
