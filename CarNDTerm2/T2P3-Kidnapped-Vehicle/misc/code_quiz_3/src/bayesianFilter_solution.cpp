@@ -137,7 +137,23 @@ void bayesianFilter::process_measurement(const MeasurementPackage &measurements,
 
 		//define observation posterior:
 		float posterior_obs = 1.0f ;
-		
+
+		float pseudo_range_min = 0.0f;
+		//check, if distance vector exists:
+		if (pseudo_ranges.size() > 0)
+		{
+
+			//set min distance:
+			pseudo_range_min = pseudo_ranges[0];
+			//remove this entry from pseudo_ranges-vector:
+			pseudo_ranges.erase(pseudo_ranges.begin());
+		}
+		//no or negative distances: set min distance to maximum distance:
+		else
+		{
+			pseudo_range_min = distance_max;
+		}
+
 		//run over current observation vector:
 		for (unsigned int z=0; z< observations.distance_f.size(); ++z){
 
