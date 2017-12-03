@@ -57,7 +57,9 @@ int main()
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
-          
+          pid.UpdateError(cte, speed, angle);
+          steer_value = pid.CalcualteSteeringAngle();
+          // steer_value = -2 * cte;
           // DEBUG
           std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
 
