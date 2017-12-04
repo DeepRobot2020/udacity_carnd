@@ -1,8 +1,21 @@
 # CarND-Controls-PID
 Self-Driving Car Engineer Nanodegree Program
 
+## Reflection
 ---
+### Describe the effect each of the P, I, D components had in your implementation.
+- P components decides how fast the controller reacting to the Cross Track Error (CTE). CTE indicates how far away the vechile is from the middle 
+of the road. It is quite intuitive as when the vechile is to the left of the middle line, we want to steer to the right and if the vechile is to the right side of the middle line, we want to steer to left. A larger P components will correct the CTE quicker, however it will also incur more oscillations due to overshoot. If a P component is too small, the vechile will react to CTE too slowly and it might eventually run out of track. 
 
+- I components is to integrate all the past CTEs until current point. This component is trying to correct the systematic bias of a vechile. The bias could be a steering drift which might prevent P-D controller from converging to middle of the line. In this project, the systematic bias seems to be very small as my twiddle training shows that a very small I component is enough for the vechile to stay around the center line. 
+
+- D component is decided by the first deriative of CTE. It has the opposite effect as P component and it tries to smooth the controller. If the CTE change over time is too sharp (oscillation), the first deriative of CTE will be large. By incorporating deriative of CTE into the controller, we can drive those sharp steering to zero so that vechile can drive more smoothly on the road. 
+
+
+### Describe how the final hyperparameters were chosen.
+
+
+---
 ## Dependencies
 
 * cmake >= 3.5
