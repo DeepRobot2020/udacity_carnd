@@ -67,7 +67,7 @@ double PID::CalcualteSteeringAngle()
 double PID::CalcualteThrottling()
 {
     double throttle = -0.2 * s_error;
-    throttle = min(throttle, 0.5);
+    throttle = min(throttle, 0.6);
     throttle = max(throttle, 0.05);
     return throttle;
 }

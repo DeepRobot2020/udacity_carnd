@@ -49,7 +49,9 @@ class Twiddle
     * Note: this is the optimal value after my twiddle training with 
     * a couple of full tracks
     */
-    std::vector<double> p = {0.2, 1e-6, 1.543};
+    std::vector<double> p = {0.172, 6.93e-06, 1.58738};
+    std::vector<double> best_p = {0.2, 1e-6, 1.543};
+    
     std::vector<double> dp = {0.1, 1e-6, 0.08};
 
     const std::vector<double> p_min = {0.01, 0, 0.01};

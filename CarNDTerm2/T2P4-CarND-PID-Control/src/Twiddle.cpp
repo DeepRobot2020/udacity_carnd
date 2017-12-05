@@ -38,6 +38,7 @@ void Twiddle::UpdateCurrentParameterError(double error)
         if (error < best_error) // There was an improvement
         {
             best_error = error;
+            best_p = p;
             dp[paramter_index] *= 1.1;
             visit_status = all_visited;
         }
@@ -53,6 +54,7 @@ void Twiddle::UpdateCurrentParameterError(double error)
         if (error < best_error) // There was an improvement
         {
             best_error = error;
+            best_p = p;
             dp[paramter_index] *= 1.05;
         }
         else // There was no improvement
@@ -83,7 +85,11 @@ std::vector<double> Twiddle::GetParameters()
     std::cout << "Kp: " << p[0] << std::endl;
     std::cout << "Ki: " << p[1] << std::endl;
     std::cout << "Kd: " << p[2] << std::endl;
-
+    std::cout << "*********** " << std::endl;
+    std::cout << "best_Kp: " << best_p[0] << std::endl;
+    std::cout << "best_Ki: " << best_p[1] << std::endl;
+    std::cout << "best_Kd: " << best_p[2] << std::endl;
+    std::cout << "*********** " << std::endl;
     std::cout << "dp_p: " << dp[0] << std::endl;
     std::cout << "dp_i: " << dp[1] << std::endl;
     std::cout << "dp_d: " << dp[2] << std::endl;
@@ -99,11 +105,7 @@ bool Twiddle::IsCompleted()
     {
         dp_is_good &= (dp[i] > p_min[i] && dp[i] < p_max[i]);
     }
-    // std::cout << "sum_dp " << sum_dp << std::endl;
-    // std::cout << "best_error " << best_error << std::endl;
-    // std::cout << "dp_is_good " << dp_is_good << std::endl;
 
     return sum_dp < 0.01 && 
-         best_error < 1.0 &&
          dp_is_good;
 }

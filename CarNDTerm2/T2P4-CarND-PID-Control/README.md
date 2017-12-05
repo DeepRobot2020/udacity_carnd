@@ -11,9 +11,20 @@ of the road. It is quite intuitive as when the vechile is to the left of the mid
 
 - D component is decided by the first deriative of CTE. It has the opposite effect as P component and it tries to smooth the controller. If the CTE change over time is too sharp (oscillation), the first deriative of CTE will be large. By incorporating deriative of CTE into the controller, we can drive those sharp steering to zero so that vechile can drive more smoothly on the road. 
 
-
 ### Describe how the final hyperparameters were chosen.
+The final hyperparameters (P, I, D coefficients) are selected by a mix of manual tuning and twiddle algorithm. 
+Also, to make the tuning process easiler, I also update my PID controller to calculate throttling so that vechile can maintain constant speed.
+#### Manual tuning
+- First, I will set I, D coefficients to be zero and manually tune P coefficients so that I can have a P which allow the vechile stay on track for ~1000 steps
+- Then, I start manually tuning D coefficients so that there is a combination of P, D coefficients to allow the vechile to stay on track for the whole loop. The P,D coefficients I have after this step is (0.09 and 0.2)
+#### Twiddle tuning
+Twiddle tuning can be enabled in main.cpp by changing twiddle_training to be true. I am searching the P, I, D coefficients within below ranges
+- P: [0.01, 4]
+- I: [0, 0.01]
+- D: [0.01, 4] 
 
+During the twiddle tuning stage, the sum of error from the first 1500 steps are collected for each iteration. Twiddle will try a different set of P, I, D coefficients after each iteration. If the sum of error is reduced with the new set of coefficients, we will log the current error as best error and will also log this set of coefficients. 
+After about 10 hours twiddle training, I got a relatively small accumulated CTE error with P, I, D coefficients  (0.172, 6.93e-06, 1.58738) for constant vehicle speed at about 48 mph.
 
 ---
 ## Dependencies

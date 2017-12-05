@@ -7,6 +7,7 @@
 #include <math.h>
 #include <limits>
 #include <vector>
+#include <chrono>
 
 // for convenience
 using json = nlohmann::json;
@@ -37,7 +38,9 @@ static std::string hasData(std::string s)
 
 static Twiddle twiddle;
 static int n_steps = 0;
-static double target_speed = 40;
+static int twiddle_reset_steps = 1800;
+static int n_twiddle_loops = 0;
+static double target_speed = 50;
 static bool twiddle_training = false;
 
 int main()
@@ -54,15 +57,21 @@ int main()
         // The 2 signifies a websocket event
         if (twiddle_training && !twiddle.IsCompleted())
         {
-            if (n_steps % 1800 == 0)
+            if (n_steps % twiddle_reset_steps == 0)
             {
                 std::string msg = "42[\"reset\",{}]";
                 ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-                std::cout << "Reset.... " << std::endl;
+                auto now = std::chrono::system_clock::now();
+                auto now_c = std::chrono::system_clock::to_time_t(now);
+                std::cout << "Reseting at: " << std::put_time(std::localtime(&now_c), "%c") << '\n';
 
                 if (n_steps > 0)
                 {
+                    std::cout << "n_twiddle_loops: " << n_twiddle_loops << '\n';
+                    std::cout << "twiddle_reset_steps: " << twiddle_reset_steps << '\n';
+
                     n_steps = 0;
+                    n_twiddle_loops++;
                     const double cur_error = pid.TotalError();
                     twiddle.UpdateCurrentParameterError(cur_error);
                     pid.Reset();
