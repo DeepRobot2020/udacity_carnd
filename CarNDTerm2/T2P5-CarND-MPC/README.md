@@ -1,8 +1,64 @@
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
 
----
+[Starter Code](https://github.com/udacity/CarND-MPC-Project)
 
+[Simulator](https://github.com/udacity/self-driving-car-sim/releases)
+
+---
+## The Model
+
+In this project, we used a simple kinematic model to control the vehile to drive in simulator. 
+
+![Vechile State](pics/Vehicle_Mode.png)
+
+State of vechile is modeled by 4 variables _[x,y,ψ,v]_, where (_x,y_) is the position of the vehicle in world coordinates, (_ψ_) is its heading direct and (_v_) is its speed.
+We simpliy the actuators to be two variables  _[δ,a]_, where _δ is to model the steering and _a is to model for throttling. To further simplify the quesiton, we normalize both the actuators so that they are within the range of [-1, 1].
+
+Below are the equations of how we update the state vector of the vehicle:
+
+![Update Equations](pics/Vehicle_Model_equ.png)
+
+## Timestep Length and Elapsed Duration (N & dt)
+Student discusses the reasoning behind the chosen N (timestep length) and dt (elapsed duration between timesteps) values. Additionally the student details the previous values tried.
+
+The time length and elapsed duration are carefully selected for this project. We started with selection of N * dt, as this decides how much you want to predict the future. As the real world vehicle can drive up to 80mph or 35.76 mps (metre per second). In one second, the vehicle can drive up to 35 metres. Therefore, we limite our N * dt to be 1 second. After select N * dt, we choose N = 10 and dt = 0.1. We also tried N * dt to be 2 second and when the speed of vechile is over 60mph, we did notice the MPC controller starts oscillation or unable stay on the track, which proves our previous theory. 
+
+## Polynomial Fitting and MPC Preprocessing
+
+A polynomial is fitted to waypoints.
+If the student preprocesses waypoints, the vehicle state,
+ and/or actuators prior to the MPC procedure it is described.
+
+The waypoints we received from the simulator are in the world coordinates. We found that is is more computation light if we covert them into vehicle's coordinates. This is done by below code in main.cpp. 
+```c++
+          for (uint32_t i = 0; i < ptsx.size(); i++)
+          {
+            double shifted_x = ptsx[i] - px;
+            double shifted_y = ptsy[i] - py;
+            // Rotate the waypoints by the homogeneous matrix
+            ptsx_vehicle[i] = shifted_x * cospsi - shifted_y * sinpsi;
+            ptsy_vehicle[i] = shifted_y * cospsi + shifted_x * sinpsi;
+          }
+```
+After transforming the waypoints into vehicle cooridinates, we apply 3rd order of polynomial fit to get the coefficients for the solver. 
+
+## Model Predictive Control with Latency
+The student implements Model Predictive Control that handles a 100 millisecond latency. Student provides details on how they deal with latency.
+
+In this project, we assume that there is a 100ms actuator latency between issuing the actuator command to the  actual time the command applies to the vehicle hardware. To incorporate the actuator latency into the controller, we assume the world is static and predict use the kinematic model to update the state vector of the vehicle and used this updated state as the initial state for the MPC solver. 
+
+```c++
+          const double px_kinematic  = v * actuator_latency; // v * latency * cos(0);
+          const double py_kinematic  = 0;            //v * latency * sin(0);
+          const double psi_kinematic = -v * delta * actuator_latency / MPC_CONFIG::Lf;
+          const double v_kinematic   = v + a * actuator_latency;
+          const double cte_kinematic = cte - v * sin(epsi) * actuator_latency;
+          const double epsi_kinematic = epsi + psi_kinematic; 
+```
+
+
+--- 
 ## Dependencies
 
 * cmake >= 3.5
