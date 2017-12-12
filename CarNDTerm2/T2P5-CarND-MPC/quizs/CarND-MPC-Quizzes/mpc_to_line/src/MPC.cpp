@@ -349,6 +349,7 @@ int main() {
     a_vals.push_back(vars[7]);
 
     state << vars[0], vars[1], vars[2], vars[3], vars[4], vars[5];
+    
     std::cout << "x = " << vars[0] << std::endl;
     std::cout << "y = " << vars[1] << std::endl;
     std::cout << "psi = " << vars[2] << std::endl;

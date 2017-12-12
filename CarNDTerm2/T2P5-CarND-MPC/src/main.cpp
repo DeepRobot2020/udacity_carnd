@@ -11,6 +11,7 @@
 
 // for convenience
 using json = nlohmann::json;
+using namespace std;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -91,6 +92,42 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double delta = j[1]["steering_angle"];
+          double a = j[1]["throttle"];
+
+          // Make sure ptsx and ptsy have the same length
+          assert(ptsx.size() == ptsy.size());
+
+          Eigen::VectorXd ptsx_vehicle(ptsx.size());
+          Eigen::VectorXd ptsy_vehicle(ptsy.size());
+
+          const double cospsi = cos(-psi);
+          const double sinpsi = sin(-psi);
+
+          for (auto i = 0; i < ptsx.size(); i++)
+          {
+              // Map from world coordinates to vehicle coordinates
+              double shifted_x = ptsx[i] - px;
+              double shifted_y = ptsy[i] - py;
+              // Rotate the waypoints by the homogeneous matrix
+              ptsx_vehicle[i] = shifted_x * cospsi - shifted_y * sinpsi;
+              ptsy_vehicle[i] = shifted_y * cospsi + shifted_x * sinpsi;
+          }
+
+          const uint8_t coeff_order = 3;
+
+          // Make sure polyfit is solvable
+          assert(std::min(ptsx.size(), ptsy.size()) > coeff_order + 1);
+
+         
+          auto coeffs = polyfit(ptsx_vehicle, ptsy_vehicle, coeff_order);
+
+
+          auto cte  = polyeval(coeffs, 0);
+          // auto epsi = psi - atan(coeffs[1] + 2 * coeffs[2] * px + 3 * coeffs[3] * px * px)
+          auto epsi = - atan(coeffs[1]);
+          Eigen::VectorXd x0(6);
+          x0 << 0, 0, 0, v, cte, epsi;                   
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -98,8 +135,17 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+          auto vars = mpc.Solve(x0, coeffs);
+
+          double steer_value = vars[0] / (deg2rad(25) * MPC_CONFIG::Lf);
+          double throttle_value = vars[1];
+
+          // if(fabs(steer_value) > 1.0 || fabs(throttle_value) > 1.0)
+          {
+              // std::cout << "warning..." << std::endl;
+              std::cout << "steer_value:" << steer_value << std::endl;
+              std::cout << "throttle_value:" << throttle_value << std::endl;
+          }
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -110,6 +156,17 @@ int main() {
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
+          for(auto i = 0 ; i < MPC_CONFIG::N; i++)
+          {   
+              if(i % 2 == 0)
+              {
+                  mpc_x_vals.push_back(vars[i]);
+              }
+              else
+              {
+                  mpc_y_vals.push_back(vars[i]);
+              }
+          }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
@@ -123,6 +180,13 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
+          double poly_inc = 2.5;
+          int num_points = 25;
+          for(auto i = 0; i < num_points; i++)
+          {
+              next_x_vals.push_back(i * poly_inc);
+              next_y_vals.push_back(polyeval(coeffs, i * poly_inc));
+          }
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
@@ -139,7 +203,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          // this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
