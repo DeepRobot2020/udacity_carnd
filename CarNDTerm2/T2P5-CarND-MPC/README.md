@@ -20,15 +20,10 @@ Below are the equations of how we update the state vector of the vehicle:
 ![Update Equations](pics/Vehicle_Model_equ.png)
 
 ## Timestep Length and Elapsed Duration (N & dt)
-Student discusses the reasoning behind the chosen N (timestep length) and dt (elapsed duration between timesteps) values. Additionally the student details the previous values tried.
 
 The time length and elapsed duration are carefully selected for this project. We started with selection of N * dt, as this decides how much you want to predict the future. As the real world vehicle can drive up to 80mph or 35.76 mps (metre per second). In one second, the vehicle can drive up to 35 metres. Therefore, we limite our N * dt to be 1 second. After select N * dt, we choose N = 10 and dt = 0.1. We also tried N * dt to be 2 second and when the speed of vechile is over 60mph, we did notice the MPC controller starts oscillation or unable stay on the track, which proves our previous theory. 
 
 ## Polynomial Fitting and MPC Preprocessing
-
-A polynomial is fitted to waypoints.
-If the student preprocesses waypoints, the vehicle state,
- and/or actuators prior to the MPC procedure it is described.
 
 The waypoints we received from the simulator are in the world coordinates. We found that is is more computation light if we covert them into vehicle's coordinates. This is done by below code in main.cpp. 
 ```c++
@@ -44,8 +39,6 @@ The waypoints we received from the simulator are in the world coordinates. We fo
 After transforming the waypoints into vehicle cooridinates, we apply 3rd order of polynomial fit to get the coefficients for the solver. 
 
 ## Model Predictive Control with Latency
-The student implements Model Predictive Control that handles a 100 millisecond latency. Student provides details on how they deal with latency.
-
 In this project, we assume that there is a 100ms actuator latency between issuing the actuator command to the  actual time the command applies to the vehicle hardware. To incorporate the actuator latency into the controller, we assume the world is static and predict use the kinematic model to update the state vector of the vehicle and used this updated state as the initial state for the MPC solver. 
 
 ```c++
