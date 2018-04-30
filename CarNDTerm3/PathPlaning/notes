@@ -1,0 +1,55 @@
+# Prediction
+1. Introduction and Overview
+a. High level Overview
+b. Inputs and outputs
+
+2. How prediction is Done
+a. Model-based vs Data-driven approaches
+b. Data-driven approach example: trajectory clustering 
+
+3. Model based approaches
+a. process Model
+b. multi-model estimators
+
+4. Hybrid approaches
+a. Intent Classfication -> trajectory Generation
+b. Naive Bayes
+
+
+## Model-based vs Data-driven approaches
+
+### Model-based:
+Mode a (Assumption a) -> 
+            
+Mode b (Assumption b) -> Multimodal Estimation Algo -> Predicted Trajectories 
+                 
+Observations          ->   
+
+### Model based approach
+For each dynamic object neary by:
+1. Identity common driving behaviors(change lane, turn left, cross street)
+2. Define process model for each
+3. update beiefs by comparing the observation with the output of the process model
+4. trajectory generation 
+
+
+Data-driven approaches:
+Observations  ->     
+                     Machine Learning Model -> 
+Training data -> 
+
+
+Data-driven Example: trajectory clustering
+Step 1: Offline training stage
+1. Got a LOT of Trajectories
+2. Clean the data
+3. Define some measure of simiarity
+4. Perform unsupervised clustering 
+5. Define prototype trajectories for each cluster 
+
+Step 2: Onine prediction 
+Every update cycle...
+1. Observe vehicle's partia trajectory
+2. Compare to prototype trajectories (simiarity used for clustering)
+
+
