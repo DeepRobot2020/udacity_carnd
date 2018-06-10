@@ -56,6 +56,11 @@ cost = [2, 1, 20] # cost has 3 values, corresponding to making
 # ----------------------------------------
 # modify code below
 # ----------------------------------------
+value = [[[999 for col in range(len(grid[0]))] for row in range(len(grid))],
+         [[999 for col in range(len(grid[0]))] for row in range(len(grid))],
+         [[999 for col in range(len(grid[0]))] for row in range(len(grid))],
+         [[999 for col in range(len(grid[0]))] for row in range(len(grid))]]
+
 
 def optimum_policy2D(grid,init,goal,cost):
 
