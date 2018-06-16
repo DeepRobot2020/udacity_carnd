@@ -22,7 +22,7 @@ int main() {
 
     uWS::Hub h;
     EgoVehicle ev;
-
+    
     // Load up map values for waypoint's x,y,s and d normalized normal vectors
     vector<double> map_waypoints_x;
     vector<double> map_waypoints_y;
@@ -43,7 +43,7 @@ int main() {
 
 
     // EgoVechile start with middle lane
-    int ego_lane = LaneMiddle;
+    int ego_lane = 1;
 
     // Reference velocity.
     double ref_vel = 0.0;  // mph
@@ -101,11 +101,12 @@ int main() {
             const double end_path_s = j[JSON_INDEX_PAYLOAD]["end_path_s"];
             const double end_path_d = j[JSON_INDEX_PAYLOAD]["end_path_d"];
 
-            ev.UpdateState(car_s, car_d, car_x, car_y, car_yaw, car_speed, end_path_s, end_path_d, previous_path_x, previous_path_y);
-
             // Sensor Fusion Data, a list of all other cars on the same side of the road.
             const auto sensor_fusion = j[JSON_INDEX_PAYLOAD]["sensor_fusion"];
 
+            ev.UpdateState(car_s, car_d, car_x, car_y, car_yaw, car_speed, end_path_s, end_path_d, previous_path_x, previous_path_y);
+            ev.UpdateTrafficInfo(sensor_fusion);
+            
             // Provided previous path point size.
             const int prev_size = previous_path_x.size();
 
@@ -117,17 +118,19 @@ int main() {
             bool car_left  = false;
             bool car_righ  = false;
 
+        
+            
             for (int i = 0; i < sensor_fusion.size(); i++) {
-                const float frenet_d = sensor_fusion[i][JSON_INDEX_SENSOR_FUSION_VEHICLE_D];
-
-                const LaneNumber lane = MapFrenetDToLane(frenet_d);
-
-                if (lane == LaneInvalid)  continue; 
                 // Find car speed.
                 const double vx    = sensor_fusion[i][JSON_INDEX_SENSOR_FUSION_VEHICLE_VX];
                 const double vy    = sensor_fusion[i][JSON_INDEX_SENSOR_FUSION_VEHICLE_VY];
 
                 double check_car_s = sensor_fusion[i][JSON_INDEX_SENSOR_FUSION_VEHICLE_S];
+                const float frenet_d = sensor_fusion[i][JSON_INDEX_SENSOR_FUSION_VEHICLE_D];
+
+                const LaneNumber lane = MapFrenetDToLane(frenet_d);
+
+                if (lane == LaneInvalid)  continue; 
 
                 const double check_speed = sqrt(vx * vx + vy * vy);
 
@@ -136,13 +139,16 @@ int main() {
 
                 if (lane == ego_lane) {
                     // Car in our lane.
-                    car_ahead |= check_car_s > car_s && check_car_s - car_s < MIN_SAFE_DISTRANCE;
+                    car_ahead |= 
+                      check_car_s > car_s && check_car_s - car_s < MIN_SAFE_DISTRANCE;
                 } else if (lane - ego_lane == -1) {
                     // Car left
-                    car_left |= car_s - MIN_SAFE_DISTRANCE < check_car_s && car_s + MIN_SAFE_DISTRANCE > check_car_s;
+                    car_left |= 
+                      car_s - MIN_SAFE_DISTRANCE < check_car_s && car_s + MIN_SAFE_DISTRANCE > check_car_s;
                 } else if (lane - ego_lane == 1) {
                     // Car right
-                    car_righ |= car_s - MIN_SAFE_DISTRANCE < check_car_s && car_s + MIN_SAFE_DISTRANCE > check_car_s;
+                    car_righ |= 
+                      car_s - MIN_SAFE_DISTRANCE < check_car_s && car_s + MIN_SAFE_DISTRANCE > check_car_s;
                 }
             }
 
@@ -157,6 +163,7 @@ int main() {
                     // if there is no car right and there is a right lane.
                     ego_lane++;  // Change lane right.
                 } else {
+                    // cannot switch lane, slow down
                     speed_diff -= MAX_ACC;
                 }
             } else {
@@ -205,13 +212,16 @@ int main() {
             }
 
             // Setting up target points in the future.
-            vector<double> next_wp0 = getXY(car_s + MIN_SAFE_DISTRANCE, 2 + 4 * ego_lane, map_waypoints_s,
+            vector<double> next_wp0 = getXY(car_s + MIN_SAFE_DISTRANCE, 
+                                            2 + 4 * ego_lane, map_waypoints_s,
                                             map_waypoints_x, map_waypoints_y);
 
-            vector<double> next_wp1 = getXY(car_s + MIN_SAFE_DISTRANCE * 2, 2 + 4 * ego_lane, map_waypoints_s,
+            vector<double> next_wp1 = getXY(car_s + MIN_SAFE_DISTRANCE * 2, 
+                                            2 + 4 * ego_lane, map_waypoints_s,
                                             map_waypoints_x, map_waypoints_y);
 
-            vector<double> next_wp2 = getXY(car_s + MIN_SAFE_DISTRANCE * 3, 2 + 4 * ego_lane, map_waypoints_s,
+            vector<double> next_wp2 = getXY(car_s + MIN_SAFE_DISTRANCE * 3, 
+                                            2 + 4 * ego_lane, map_waypoints_s,
                                             map_waypoints_x, map_waypoints_y);
 
             ptsx.push_back(next_wp0[0]);

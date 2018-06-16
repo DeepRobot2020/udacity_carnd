@@ -7,6 +7,7 @@
 constexpr double MAX_SPEED        = 49.5;
 constexpr double MAX_ACC          = .224;
 constexpr double MAX_S            = 6945.554;
+constexpr int MAX_TRACKED_VEHICLE_A_LANE  = 64;
 
 constexpr double JSON_INDEX_EVENT_TYPE   = 0;
 constexpr double JSON_INDEX_PAYLOAD      = 1;

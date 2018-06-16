@@ -1,9 +1,13 @@
 #include "ego_vehicle.h"
+#include "behavior_planner.h"
 
 using namespace std;
 
+static BehaviorPlanner bp;
 
-EgoVehicle::EgoVehicle() {};
+EgoVehicle::EgoVehicle() {
+    bp.SetEgoVehicle(this);
+};
 
 EgoVehicle::~EgoVehicle() {};
 
@@ -24,8 +28,11 @@ void EgoVehicle::UpdateState(double frenet_s, double frenet_d, double pos_x, dou
     evs.previous_path_y = previous_path_y;
 };
 
-void EgoVehicle::UpdateTrafficInfo(vector<vector<double> > sensor_fusion) {
+void EgoVehicle::UpdateTrafficInfo(const vector<vector<double> > &sensor_fusion) {
+    traffic.UpdateTrafficState(sensor_fusion, evs.frenet_s, evs.frenet_d);
+};
 
-
-}
+void EgoVehicle::GenerateNextTrajectory(vector<double> &x_vals, vector<double> &y_vals) {
+    bp.GenerateNextTrajectory(x_vals, y_vals);
+};
 
