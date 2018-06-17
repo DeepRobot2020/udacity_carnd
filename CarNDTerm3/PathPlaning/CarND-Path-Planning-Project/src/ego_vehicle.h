@@ -17,6 +17,8 @@ struct EgoVehicleState {
     double              speed;
     double              end_path_s;
     double              end_path_d;
+    double              ref_velocity;
+
     std::vector<double> previous_path_x;
     std::vector<double> previous_path_y;
     
@@ -29,7 +31,39 @@ struct EgoVehicleState {
         speed      = 0.0;
         end_path_s = 0.0;
         end_path_d = 0.0;
+        ref_velocity = 0.0;
+        previous_path_x = {};
+        previous_path_y = {};
     };
+
+    EgoVehicleState(const EgoVehicleState &rhs) {
+        frenet_s   = rhs.frenet_s;
+        frenet_d   = rhs.frenet_d;
+        pos_x      = rhs.pos_x;
+        pos_y      = rhs.pos_y;
+        yaw        = rhs.yaw;
+        speed      = rhs.speed;
+        end_path_s = rhs.end_path_s;
+        end_path_d = rhs.end_path_d;
+        ref_velocity = rhs.ref_velocity;
+        previous_path_x = std::move(rhs.previous_path_x);
+        previous_path_y = std::move(rhs.previous_path_y);
+    }
+
+    EgoVehicleState& operator = (const EgoVehicleState &rhs) {
+        frenet_s   = rhs.frenet_s;
+        frenet_d   = rhs.frenet_d;
+        pos_x      = rhs.pos_x;
+        pos_y      = rhs.pos_y;
+        yaw        = rhs.yaw;
+        speed      = rhs.speed;
+        end_path_s = rhs.end_path_s;
+        end_path_d = rhs.end_path_d;
+        ref_velocity = rhs.ref_velocity;
+        previous_path_x = std::move(rhs.previous_path_x);
+        previous_path_y = std::move(rhs.previous_path_y);
+    }
+
     ~EgoVehicleState(){};
 };
 
@@ -47,11 +81,8 @@ public:
                    const std::vector<double> &previous_path_x, const std::vector<double> &previous_path_y);
   void UpdateTrafficInfo(const std::vector<std::vector<double>> &sensor_fusion);
   void GenerateNextTrajectory(std::vector<double> &x_vals, std::vector<double> &y_vals);
-
-private:
-    // BehaviorPlanner bp;
-    EgoVehicleState evs; 
-    Traffic traffic;
+  EgoVehicleState evs; 
+  Traffic traffic;
 };
 
 #endif  // EGOVEHICLE_H

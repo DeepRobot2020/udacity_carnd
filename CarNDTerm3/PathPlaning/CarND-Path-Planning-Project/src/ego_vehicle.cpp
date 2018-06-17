@@ -1,3 +1,4 @@
+#include <iostream>
 #include "ego_vehicle.h"
 #include "behavior_planner.h"
 
@@ -24,12 +25,13 @@ void EgoVehicle::UpdateState(double frenet_s, double frenet_d, double pos_x, dou
     evs.speed           = speed;
     evs.end_path_s      = end_path_s;
     evs.end_path_d      = end_path_d;
-    evs.previous_path_x = previous_path_x;
-    evs.previous_path_y = previous_path_y;
+    evs.previous_path_x = std::move(previous_path_x);
+    evs.previous_path_y = std::move(previous_path_y);
 };
 
 void EgoVehicle::UpdateTrafficInfo(const vector<vector<double> > &sensor_fusion) {
-    traffic.UpdateTrafficState(sensor_fusion, evs.frenet_s, evs.frenet_d);
+    int frenet_s = evs.previous_path_x.size() ? evs.end_path_s : evs.frenet_s;
+    traffic.UpdateTrafficState(sensor_fusion, frenet_s, evs.frenet_d, evs.previous_path_x.size());
 };
 
 void EgoVehicle::GenerateNextTrajectory(vector<double> &x_vals, vector<double> &y_vals) {
