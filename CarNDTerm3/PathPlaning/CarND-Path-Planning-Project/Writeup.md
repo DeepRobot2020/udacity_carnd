@@ -28,5 +28,12 @@ In the ChangeLaneLeft/Right state, we will first check whether current ego vehic
 
 # Reflection
 
+Seeing the ego vechile is actually driving autonomously in the simulator is quite exicting and my current solution can drive witout incident for more than 5 miles. However, current implement is not yet optimal due to following a few issues. 
+
+- If the optimal lane is not right beside the ego vehicle, current solution will just try to switch to the lane right beside it first by checking the cost of this lane. However, the cost might seems to be larger than the cost of staying current lane but the long term cost would be higher as our final goal is to the lane two lanes beside us. This is a bit hard to implement with only two states
+
+- Missing the PrepareLaneChange Left/Right state. Sometimes, the free space in the lane we are trying to switch is not immedidately avalabile. It could be slightly ahead or behind the ego vehicle and this state can help the ego vehicle better track the free space and could have a better timing of changing lanes. 
+
+
 
 

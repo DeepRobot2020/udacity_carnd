@@ -46,17 +46,17 @@ vector<double> JMT(vector< double> start, vector <double> end, double T)
     double T5 = T4*T;
 
 
-    MatrixXd A;
+    MatrixXd A = MatrixXd(3, 3);
     A << T3,     T4,    T5,
            3*T2, 4*T3,  5*T4,
            6*T,  12*T2, 20*T3;
     
-    Vector3d b; 
+    VectorXd b = VectorXd(3, 1);
     b << end[0] - (start[0] + start[1] * T + start[2]*T2 / 2.0),
          end[1] - (start[1] + start[2] * T),
          end[2] - start[2];
 
-    Vector3d x = A.colPivHouseholderQr().solve(b);
+    VectorXd x = A.colPivHouseholderQr().solve(b);
 
     return {a0, a1, a2, x(0), x(1), x(2)};
     

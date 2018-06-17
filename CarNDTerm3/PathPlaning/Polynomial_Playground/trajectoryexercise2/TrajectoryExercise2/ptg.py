@@ -76,7 +76,7 @@ def PTG(start_s, start_d, target_vehicle, delta, T, predictions):
     return best
     
 
-def calculate_cost(trajectory, target_vehicle, delta, goal_t, predictions, cost_functions_with_weights, verbose=False):
+def calculate_cost(trajectory, target_vehicle, delta, goal_t, predictions, cost_functions_with_weights, verbose=True):
     cost = 0
     for cf, weight in cost_functions_with_weights:
         new_cost = weight * cf(trajectory, target_vehicle, delta, goal_t, predictions)
